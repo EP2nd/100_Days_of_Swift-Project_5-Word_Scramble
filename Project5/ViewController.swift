@@ -4,60 +4,7 @@ class ViewController: UITableViewController {
 
     var allWords = [String]()
     var usedWords = [String]()
-    
-    @objc func startGame() {
-        title  = allWords.randomElement()
-        usedWords.removeAll(keepingCapacity: true)
-        tableView.reloadData()
-    }
-    
-    func showErrorMessage(errorTitle: String, errorMessage: String) {
-        
-        let alertController = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alertController, animated: true)
-    }
-    
-    func submit(_ answer: String) {
-        let lowerAnswer = answer.lowercased()
-        
-        /* let errorTitle: String
-        let errorMessage: String */
-        
-        if isPossible(word: lowerAnswer) {
-            if isOriginal(word: lowerAnswer) {
-                if isReal(word: lowerAnswer) {
-                    usedWords.insert(answer.lowercased(), at: 0)
-                    
-                    let indexPath = IndexPath(row: 0, section: 0)
-                    tableView.insertRows(at: [indexPath], with: .automatic)
-                    
-                    return
-                }
-                showErrorMessage(errorTitle: "The word was too short or not recognised", errorMessage: "You can't just make them up, you know!")
-                return
-            }
-            showErrorMessage(errorTitle: "The word was the same as the keyword or it has been used already", errorMessage: "Be more original!")
-            return
-        }
-        guard let title = title?.lowercased() else { return }
-        showErrorMessage(errorTitle: "The word was not possible", errorMessage: "You can't spell that word from \(title)!")
-        return
-        
-        /* let alertController = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alertController, animated: true) */
-    }
-    
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return usedWords.count
-    }
-    
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Word", for: indexPath)
-        cell.textLabel?.text = usedWords[indexPath.row]
-        return cell
-    }
+    var lastWord: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -76,7 +23,33 @@ class ViewController: UITableViewController {
             allWords = ["silkworm"]
         }
         
-        startGame()
+        let defaults = UserDefaults.standard
+        
+        if let savedWord = defaults.value(forKey: "savedWord") as? String, let savedWords = defaults.value(forKey: "savedWords") as? [String] {
+            title = savedWord
+            lastWord = savedWord
+            usedWords = savedWords
+        } else {
+            startGame()
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return usedWords.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Word", for: indexPath)
+        cell.textLabel?.text = usedWords[indexPath.row]
+        return cell
+    }
+    
+    @objc func startGame() {
+        title  = allWords.randomElement()
+        lastWord = title
+        usedWords.removeAll(keepingCapacity: true)
+        tableView.reloadData()
+        save()
     }
     
     @objc func promptForAnswer() {
@@ -120,5 +93,51 @@ class ViewController: UITableViewController {
         } else {
             return false
         }
+    }
+    
+    func submit(_ answer: String) {
+        let lowerAnswer = answer.lowercased()
+        
+        /* let errorTitle: String
+        let errorMessage: String */
+        
+        if isPossible(word: lowerAnswer) {
+            if isOriginal(word: lowerAnswer) {
+                if isReal(word: lowerAnswer) {
+                    usedWords.insert(answer.lowercased(), at: 0)
+                    save()
+                    
+                    let indexPath = IndexPath(row: 0, section: 0)
+                    tableView.insertRows(at: [indexPath], with: .automatic)
+
+                    return
+                }
+                showErrorMessage(errorTitle: "The word was too short or not recognised", errorMessage: "You can't just make them up, you know!")
+                return
+            }
+            showErrorMessage(errorTitle: "The word was the same as the keyword or it has been used already", errorMessage: "Be more original!")
+            return
+        }
+        guard let title = title?.lowercased() else { return }
+        showErrorMessage(errorTitle: "The word was not possible", errorMessage: "You can't spell that word from \(title)!")
+        return
+        
+        /* let alertController = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true) */
+    }
+    
+    func showErrorMessage(errorTitle: String, errorMessage: String) {
+        
+        let alertController = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
+    
+    func save() {
+        let defaults = UserDefaults.standard
+        
+        defaults.set(lastWord, forKey: "savedWord")
+        defaults.set(usedWords, forKey: "savedWords")
     }
 }
