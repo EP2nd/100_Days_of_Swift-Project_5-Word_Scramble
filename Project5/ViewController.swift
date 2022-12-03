@@ -11,6 +11,7 @@ class ViewController: UITableViewController {
 
     var allWords = [String]()
     var usedWords = [String]()
+    
     var lastWord: String?
     
     override func viewDidLoad() {
@@ -18,6 +19,7 @@ class ViewController: UITableViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(promptForAnswer))
         
+        /// Challenge 3:
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .refresh , target: self, action: #selector(startGame))
         
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
@@ -30,6 +32,7 @@ class ViewController: UITableViewController {
             allWords = ["silkworm"]
         }
         
+        /// Project 12, challenge 3:
         let defaults = UserDefaults.standard
         
         if let savedWord = defaults.value(forKey: "savedWord") as? String, let savedWords = defaults.value(forKey: "savedWords") as? [String] {
@@ -46,20 +49,27 @@ class ViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "Word", for: indexPath)
         cell.textLabel?.text = usedWords[indexPath.row]
+        
         return cell
     }
     
+    /// Challenge 3:
     @objc func startGame() {
         title  = allWords.randomElement()
         lastWord = title
         usedWords.removeAll(keepingCapacity: true)
+        
         tableView.reloadData()
+        
+        /// Project 12, challenge 3:
         save()
     }
     
     @objc func promptForAnswer() {
+        
         let alertController = UIAlertController(title: "Enter answer", message: nil, preferredStyle: .alert)
         alertController.addTextField()
         
@@ -73,6 +83,8 @@ class ViewController: UITableViewController {
     }
     
     func isPossible(word: String) -> Bool {
+        
+        /// Challenge 1:
         guard var tempWord = title?.lowercased() else { return false }
         
         for letter in word {
@@ -82,7 +94,6 @@ class ViewController: UITableViewController {
                 return false
             }
         }
-        
         return true
     }
     
@@ -91,10 +102,12 @@ class ViewController: UITableViewController {
     }
     
     func isReal(word: String) -> Bool {
+        
         let checker = UITextChecker()
         let range = NSRange(location: 0, length: word.utf16.count)
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
         
+        /// Challenge 1:
         if word.utf16.count >= 3 {
             return misspelledRange.location == NSNotFound
         } else {
@@ -111,7 +124,11 @@ class ViewController: UITableViewController {
         if isPossible(word: lowerAnswer) {
             if isOriginal(word: lowerAnswer) {
                 if isReal(word: lowerAnswer) {
+                    
+                    /// Bonus challenge:
                     usedWords.insert(answer.lowercased(), at: 0)
+                    
+                    /// Project 12, challenge 3:
                     save()
                     
                     let indexPath = IndexPath(row: 0, section: 0)
@@ -119,14 +136,21 @@ class ViewController: UITableViewController {
 
                     return
                 }
+                /// Challenge 2:
                 showErrorMessage(errorTitle: "The word was too short or not recognised", errorMessage: "You can't just make them up, you know!")
+                
                 return
             }
+            /// Challenge 2:
             showErrorMessage(errorTitle: "The word was the same as the keyword or it has been used already", errorMessage: "Be more original!")
+            
             return
         }
         guard let title = title?.lowercased() else { return }
+        
+        /// Challenge 2:
         showErrorMessage(errorTitle: "The word was not possible", errorMessage: "You can't spell that word from \(title)!")
+        
         return
         
         /* let alertController = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
@@ -134,14 +158,18 @@ class ViewController: UITableViewController {
         present(alertController, animated: true) */
     }
     
+    /// Challenge 2:
     func showErrorMessage(errorTitle: String, errorMessage: String) {
         
         let alertController = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        
         present(alertController, animated: true)
     }
     
+    /// Project 12, challenge 3:
     func save() {
+        
         let defaults = UserDefaults.standard
         
         defaults.set(lastWord, forKey: "savedWord")
